@@ -1,0 +1,36 @@
+diff -ur a/BaseTools/Conf/tools_def.template b/BaseTools/Conf/tools_def.template
+--- a/BaseTools/Conf/tools_def.template	2023-03-30 19:02:34.399483165 -0700
++++ b/BaseTools/Conf/tools_def.template	2023-03-30 19:10:28.647877501 -0700
+@@ -1849,7 +1849,7 @@
+ *_*_*_DTCPP_PATH                   = DEF(DTCPP_BIN)
+ *_*_*_DTC_PATH                     = DEF(DTC_BIN)
+ 
+-DEFINE GCC_ALL_CC_FLAGS            = -g -Os -fshort-wchar -fno-builtin -fno-strict-aliasing -Wall -Werror -Wno-array-bounds -include AutoGen.h -fno-common
++DEFINE GCC_ALL_CC_FLAGS            = -g -Os -fshort-wchar -fno-builtin -fno-strict-aliasing -Wall -Wno-array-bounds -include AutoGen.h -fno-common
+ DEFINE GCC_ARM_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -mlittle-endian -mabi=aapcs -fno-short-enums -funsigned-char -ffunction-sections -fdata-sections -fomit-frame-pointer -Wno-address -mthumb -fno-pic -fno-pie
+ DEFINE GCC_LOONGARCH64_CC_FLAGS    = DEF(GCC_ALL_CC_FLAGS) -mabi=lp64d -fno-asynchronous-unwind-tables -fno-plt -Wno-address -fno-short-enums -fsigned-char -ffunction-sections -fdata-sections
+ DEFINE GCC_ARM_CC_XIPFLAGS         = -mno-unaligned-access
+diff -ur a/BaseTools/Source/C/Makefiles/header.makefile b/BaseTools/Source/C/Makefiles/header.makefile
+--- a/BaseTools/Source/C/Makefiles/header.makefile	2023-03-30 19:03:47.571965470 -0700
++++ b/BaseTools/Source/C/Makefiles/header.makefile	2023-03-30 19:09:33.948511570 -0700
+@@ -88,17 +88,17 @@
+ 
+ ifeq ($(DARWIN),Darwin)
+ # assume clang or clang compatible flags on OS X
+-BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall -Werror \
++BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall \
+ -Wno-deprecated-declarations -Wno-self-assign -Wno-unused-result -nostdlib -g
+ else
+ ifeq ($(CXX), llvm)
+ BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fwrapv \
+--fno-delete-null-pointer-checks -Wall -Werror \
++-fno-delete-null-pointer-checks -Wall \
+ -Wno-deprecated-declarations -Wno-self-assign \
+ -Wno-unused-result -nostdlib -g
+ else
+ BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fwrapv \
+--fno-delete-null-pointer-checks -Wall -Werror \
++-fno-delete-null-pointer-checks -Wall \
+ -Wno-deprecated-declarations -Wno-stringop-truncation -Wno-restrict \
+ -Wno-unused-result -nostdlib -g
+ endif
