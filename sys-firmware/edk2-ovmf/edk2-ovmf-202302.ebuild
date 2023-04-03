@@ -1,10 +1,11 @@
 # Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
+# shellcheck disable=SC2034
 
 EAPI=8
 
 PYTHON_REQ_USE="sqlite"
-PYTHON_COMPAT=( python3_{9,10,11} )
+PYTHON_COMPAT=(python3_{9,10,11})
 
 inherit python-any-r1 readme.gentoo-r1
 
@@ -13,23 +14,33 @@ HOMEPAGE="https://github.com/tianocore/edk2"
 
 BUNDLED_OPENSSL_SUBMODULE_SHA="129058165d195e43a0ad10111b0c2e29bdf65980"
 BUNDLED_BROTLI_SUBMODULE_SHA="f4153a09f87cbb9c826d8fc12c74642bb2d879ea"
+DBXUPDATE_VERSION="20230314"
 
 # TODO: talk with tamiko about unbundling (mva)
 
 # TODO: the binary 202105 package currently lacks the preseeded
 #       OVMF_VARS.secboot.fd file (that we typically get from fedora)
 
-SRC_URI="fetch+https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable${PV}.tar.gz -> ${P}.tar.gz
-	fetch+https://github.com/openssl/openssl/archive/${BUNDLED_OPENSSL_SUBMODULE_SHA}.tar.gz -> openssl-${BUNDLED_OPENSSL_SUBMODULE_SHA}.tar.gz
-	fetch+https://github.com/google/brotli/archive/${BUNDLED_BROTLI_SUBMODULE_SHA}.tar.gz -> brotli-${BUNDLED_BROTLI_SUBMODULE_SHA}.tar.gz"
+SRC_URI="https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable${PV}.tar.gz -> ${P}.tar.gz
+	https://github.com/openssl/openssl/archive/${BUNDLED_OPENSSL_SUBMODULE_SHA}.tar.gz -> openssl-${BUNDLED_OPENSSL_SUBMODULE_SHA}.tar.gz
+	https://github.com/google/brotli/archive/${BUNDLED_BROTLI_SUBMODULE_SHA}.tar.gz -> brotli-${BUNDLED_BROTLI_SUBMODULE_SHA}.tar.gz
+	https://github.com/fwupd/dbx-firmware/blob/master/DBXUpdate-${DBXUPDATE_VERSION}.x64.bin?raw=true -> DBXUpdate.x64.bin
+	"
 
 LICENSE="BSD-2 MIT"
 SLOT="0"
 KEYWORDS="-* amd64"
+IUSE="make-iso"
 
 BDEPEND="app-emulation/qemu
 	>=dev-lang/nasm-2.0.7
 	>=sys-power/iasl-20160729
+	sys-firmware/python-virt-firmware
+	make-iso? (
+		dev-libs/libisoburn
+		sys-fs/mtools
+		sys-fs/dosfstools
+	)
 	${PYTHON_DEPS}"
 RDEPEND="!sys-firmware/edk2-ovmf-bin"
 
@@ -73,6 +84,7 @@ src_prepare() {
 	cp -rl "${WORKDIR}/openssl-${BUNDLED_OPENSSL_SUBMODULE_SHA}"/* "CryptoPkg/Library/OpensslLib/openssl/"
 	cp -rl "${WORKDIR}/brotli-${BUNDLED_BROTLI_SUBMODULE_SHA}"/* "BaseTools/Source/C/BrotliCompress/brotli/"
 	cp -rl "${WORKDIR}/brotli-${BUNDLED_BROTLI_SUBMODULE_SHA}"/* "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli/"
+	mv "${DISTDIR}/DBXUpdate.x64.bin" "${WORKDIR}"
 	tar -xJf "${FILESDIR}/${P}-qemu-firmware.tar.xz"
 
 	sed -i -r \
@@ -80,6 +92,39 @@ src_prepare() {
 		"${S}"/edksetup.sh || die "Fixing for correct Python3 support failed"
 
 	default
+}
+
+build_iso() {
+	dir="$1"
+	UEFI_SHELL_BINARY=${dir}/Shell.efi
+	ENROLLER_BINARY=${dir}/EnrollDefaultKeys.efi
+	UEFI_SHELL_IMAGE=uefi_shell.img
+	ISO_IMAGE=${dir}/UefiShell.iso
+
+	UEFI_SHELL_BINARY_BNAME=$(basename -- "$UEFI_SHELL_BINARY")
+	UEFI_SHELL_SIZE=$(stat --format=%s -- "$UEFI_SHELL_BINARY")
+	ENROLLER_SIZE=$(stat --format=%s -- "$ENROLLER_BINARY")
+
+	# add 1MB then 10% for metadata
+	UEFI_SHELL_IMAGE_KB=$(((\
+		UEFI_SHELL_SIZE + ENROLLER_SIZE + 1 * 1024 * 1024) * 11 / 10 / 1024))
+
+	# create non-partitioned FAT image
+	rm -f -- "$UEFI_SHELL_IMAGE"
+	mkfs.fat -C "$UEFI_SHELL_IMAGE" -n UEFI_SHELL -- "$UEFI_SHELL_IMAGE_KB"
+
+	# copy the shell binary into the FAT image
+	export MTOOLS_SKIP_CHECK=1
+	mmd -i "$UEFI_SHELL_IMAGE" ::efi
+	mmd -i "$UEFI_SHELL_IMAGE" ::efi/boot
+	mcopy -i "$UEFI_SHELL_IMAGE" "$UEFI_SHELL_BINARY" ::efi/boot/bootx64.efi
+	mcopy -i "$UEFI_SHELL_IMAGE" "$ENROLLER_BINARY" ::
+	mdir -i "$UEFI_SHELL_IMAGE" -/ ::
+
+	# build ISO with FAT image file as El Torito EFI boot image
+	xorrisofs -input-charset ASCII -J -rational-rock \
+		-e "$UEFI_SHELL_IMAGE" -no-emul-boot \
+		-o "$ISO_IMAGE" "$UEFI_SHELL_IMAGE"
 }
 
 src_compile() {
@@ -101,7 +146,8 @@ src_compile() {
 
 	emake ARCH=${TARGET_ARCH} -C BaseTools
 
-	. ./edksetup.sh
+	# shellcheck disable=SC1091
+	source ./edksetup.sh
 
 	# Build all EFI firmware blobs:
 
@@ -109,27 +155,37 @@ src_compile() {
 
 	./OvmfPkg/build.sh \
 		-a "${TARGET_ARCH}" -b "${TARGET_NAME}" -t "${TARGET_TOOLS}" \
-		${BUILD_FLAGS} || die "OvmfPkg/build.sh failed"
+		"${BUILD_FLAGS}" || die "OvmfPkg/build.sh failed"
 
 	cp Build/OvmfX64/*/FV/OVMF_*.fd ovmf/
 	rm -rf Build/OvmfX64
 
 	./OvmfPkg/build.sh \
 		-a "${TARGET_ARCH}" -b "${TARGET_NAME}" -t "${TARGET_TOOLS}" \
-		${SECUREBOOT_BUILD_FLAGS} || die "OvmfPkg/build.sh failed"
+		"${SECUREBOOT_BUILD_FLAGS}" || die "OvmfPkg/build.sh failed"
 
 	cp Build/OvmfX64/*/FV/OVMF_CODE.fd ovmf/OVMF_CODE.secboot.fd || die "cp failed"
 	cp Build/OvmfX64/*/X64/Shell.efi ovmf/ || die "cp failed"
 	cp Build/OvmfX64/*/X64/EnrollDefaultKeys.efi ovmf || die "cp failed"
+
+	virt-fw-vars --input ovmf/OVMF_VARS.fd \
+		--output ovmf/OVMF_VARS.secboot.fd \
+		--set-dbx "${DISTDIR}"/DBXUpdate.x64.bin \
+		--enroll-redhat --secure-boot || die "unable to enroll certificates for secure boot"
 
 	# Build a convenience UefiShell.img:
 
 	mkdir -p iso_image/efi/boot || die "mkdir failed"
 	cp ovmf/Shell.efi iso_image/efi/boot/bootx64.efi || die "cp failed"
 	cp ovmf/EnrollDefaultKeys.efi iso_image || die "cp failed"
+	cp ovmf/OVMF_VARS.secboot.fd iso_image || die "cp failed"
 	qemu-img convert --image-opts \
 		driver=vvfat,floppy=on,fat-type=12,label=UEFI_SHELL,dir=iso_image \
 		ovmf/UefiShell.img || die "qemu-img failed"
+
+	if use make-iso; then
+		build_iso ovmf
+	fi
 }
 
 src_install() {
@@ -138,7 +194,6 @@ src_install() {
 
 	insinto /usr/share/qemu/firmware
 	doins qemu/*
-	# [ ! -f "${ED}"/usr/share/qemu/firmware/40-edk2-ovmf-x64-sb-enrolled.json ] || (rm "${ED}"/usr/share/qemu/firmware/40-edk2-ovmf-x64-sb-enrolled.json || die "rm failed")
 
 	readme.gentoo_create_doc
 }

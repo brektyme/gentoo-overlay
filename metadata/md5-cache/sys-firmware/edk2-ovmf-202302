@@ -1,13 +1,14 @@
-BDEPEND=app-emulation/qemu >=dev-lang/nasm-2.0.7 >=sys-power/iasl-20160729 || ( >=dev-lang/python-3.11.1-r1:3.11[sqlite] >=dev-lang/python-3.10.9-r1:3.10[sqlite] >=dev-lang/python-3.9.16-r1:3.9[sqlite] )
+BDEPEND=app-emulation/qemu >=dev-lang/nasm-2.0.7 >=sys-power/iasl-20160729 sys-firmware/python-virt-firmware make-iso? ( dev-libs/libisoburn sys-fs/mtools sys-fs/dosfstools ) || ( >=dev-lang/python-3.11.1-r1:3.11[sqlite] >=dev-lang/python-3.10.9-r1:3.10[sqlite] >=dev-lang/python-3.9.16-r1:3.9[sqlite] )
 DEFINED_PHASES=compile install postinst prepare setup
 DESCRIPTION=UEFI firmware for 64-bit x86 virtual machines
 EAPI=8
 HOMEPAGE=https://github.com/tianocore/edk2
 INHERIT=python-any-r1 readme.gentoo-r1
+IUSE=make-iso
 KEYWORDS=-* amd64
 LICENSE=BSD-2 MIT
 RDEPEND=!sys-firmware/edk2-ovmf-bin
 SLOT=0
-SRC_URI=fetch+https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable202302.tar.gz -> edk2-ovmf-202302.tar.gz fetch+https://github.com/openssl/openssl/archive/129058165d195e43a0ad10111b0c2e29bdf65980.tar.gz -> openssl-129058165d195e43a0ad10111b0c2e29bdf65980.tar.gz fetch+https://github.com/google/brotli/archive/f4153a09f87cbb9c826d8fc12c74642bb2d879ea.tar.gz -> brotli-f4153a09f87cbb9c826d8fc12c74642bb2d879ea.tar.gz
+SRC_URI=https://github.com/tianocore/edk2/archive/refs/tags/edk2-stable202302.tar.gz -> edk2-ovmf-202302.tar.gz https://github.com/openssl/openssl/archive/129058165d195e43a0ad10111b0c2e29bdf65980.tar.gz -> openssl-129058165d195e43a0ad10111b0c2e29bdf65980.tar.gz https://github.com/google/brotli/archive/f4153a09f87cbb9c826d8fc12c74642bb2d879ea.tar.gz -> brotli-f4153a09f87cbb9c826d8fc12c74642bb2d879ea.tar.gz https://github.com/fwupd/dbx-firmware/blob/master/DBXUpdate-20230314.x64.bin?raw=true -> DBXUpdate.x64.bin
 _eclasses_=multiprocessing	b4e253ab22cef7b1085e9b67c7a3b730	toolchain-funcs	14a8ae365191b518fad51caad7a08f3e	multilib	d1408425c7c4a7669b9b17735404b693	python-utils-r1	429bfd4e8d8e39db5385ba5744f30788	python-any-r1	d2955aaac8daaaa69fcc6dc93ed19f29	readme.gentoo-r1	204091a2cde6179cd9d3db26d09412d3
-_md5_=8c3557cf101a0765163376a31e346f60
+_md5_=aed5507a038fb26ff7f2be55c530f8ed

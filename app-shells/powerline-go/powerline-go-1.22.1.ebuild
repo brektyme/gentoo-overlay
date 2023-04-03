@@ -1,5 +1,7 @@
 # Copyright 1999-2020 Go Overlay Authors
 # Distributed under the terms of the GNU General Public License v2
+# shellcheck disable=SC2034
+#
 
 EAPI=7
 
@@ -24,4 +26,4 @@ DESCRIPTION="A beautiful and useful low-latency prompt for your shell"
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="amd64 x86 arm"
+KEYWORDS="amd64 arm x86"

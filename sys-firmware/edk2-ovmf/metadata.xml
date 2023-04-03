@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
-<maintainer type="person">
-	<email>tamiko@gentoo.org</email>
-	<name>Matthias Maier</name>
-</maintainer>
-<maintainer type="project">
-	<email>virtualization@gentoo.org</email>
-	<name>Gentoo Virtualization Project</name>
-</maintainer>
+    <maintainer type="person">
+        <email>brektyme@brektyme.com</email>
+        <name>Joshua Doll</name>
+    </maintainer>
+    <use>
+        <flag name="make-iso">Build a helper ISO for EFI Shell</flag>
+    </use>
+    <upstream>
+        <remote-id type='github'>tianocore/edk2</remote-id>
+    </upstream>
 </pkgmetadata>

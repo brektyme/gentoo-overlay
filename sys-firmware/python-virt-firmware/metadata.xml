@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<!--
+  This is the example metadata file.
+  The root element of this file is <pkgmetadata>. Within this element a
+  number of subelements are allowed, the most common being maintainer.
+
+  For a full description look at:
+  https://devmanual.gentoo.org/ebuild-writing/misc-files/metadata/
+
+  Before committing, please remove the comments from this file. They are
+  not relevant for general metadata.xml files.
+-->
+<pkgmetadata>
+  <maintainer type="person">
+    <email>brektyme@brektyme.com</email>
+    <description>Primary maintainer</description>
+    <name>Joshua Doll</name>
+  </maintainer>
+  <longdescription>
+    This is a small collection of tools for edk2 firmware images.  They
+    support decoding and printing the content of firmware volumes.
+    Variable stores (OVMF_VARS.fd) can be modified, for example to enroll
+    secure boot certificates.
+  </longdescription>
+  <upstream>
+    <remote-id type='gitlab'>kraxel/virt-firmware</remote-id>
+  </upstream>
+  <use>
+    <flag name="doc">Build the manpages</flag>
+  </use>
+</pkgmetadata>
